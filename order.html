@@ -203,6 +203,19 @@ async function submitOrder() {
   const a = document.getElementById('faddress').value.trim();
   const pkg = document.getElementById('fpackage').value;
 
+  if (!/^\d+$/.test(p)) {
+    alert('❌ Phone number must contain numbers only — no letters or symbols.');
+    document.getElementById('fphone').focus();
+    return;
+  }
+
+  // Check for exactly 11 digits
+  if (p.length !== 11) {
+    alert(`❌ Phone number must be exactly 11 digits. You entered ${p.length}.`);
+    document.getElementById('fphone').focus();
+    return;
+  }
+
   if (!n || !p || !a || !pkg) {
     alert('Please fill in all fields to place your order.');
     return;
