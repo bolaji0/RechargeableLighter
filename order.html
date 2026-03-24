@@ -115,7 +115,6 @@ src="https://www.facebook.com/tr?id=1069148235232613&ev=PageView&noscript=1"
     <h3>📦 Complete Your Order</h3>
     <p>No payment now — we call to confirm before shipping</p>
     <div class="cod-note">✅ Pay on Delivery — 100% Safe. No upfront payment.</div>
-
     <form id="orderForm">
       <input type="hidden" name="access_key" value="1c605a18-6f82-4332-a792-572253c67848" />
       <div class="form-group">
@@ -124,7 +123,15 @@ src="https://www.facebook.com/tr?id=1069148235232613&ev=PageView&noscript=1"
       </div>
       <div class="form-group">
         <label>WhatsApp / Phone Number</label>
-        <input type="tel" id="fphone" name="phone" placeholder="e.g. 08012345678" />
+        <input type="tel" id="fphone" name="phone" placeholder="e.g. 08012345678"
+          maxlength="11" inputmode="numeric"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+      </div>
+      <div class="form-group">
+        <label>Confirm Phone Number</label>
+        <input type="tel" id="fphone2" placeholder="Re-enter your phone number"
+          maxlength="11" inputmode="numeric"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
       </div>
       <div class="form-group">
         <label>Delivery Address</label>
@@ -181,7 +188,6 @@ src="https://www.facebook.com/tr?id=1069148235232613&ev=PageView&noscript=1"
 </footer>
 
 <script>
-// Pre-select package if user clicked a package button on index.html
 window.addEventListener('DOMContentLoaded', function() {
   try {
     const pkg = sessionStorage.getItem('eco_package');
@@ -198,33 +204,58 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 async function submitOrder() {
-  const n = document.getElementById('fname').value.trim();
-  const p = document.getElementById('fphone').value.trim();
-  const a = document.getElementById('faddress').value.trim();
-  const pkg = document.getElementById('fpackage').value;
+  const n    = document.getElementById('fname').value.trim();
+  const p    = document.getElementById('fphone').value.trim();
+  const p2   = document.getElementById('fphone2').value.trim();
+  const a    = document.getElementById('faddress').value.trim();
+  const pkg  = document.getElementById('fpackage').value;
 
+  // 1. All fields filled
+  if (!n || !p || !p2 || !a || !pkg) {
+    alert('Please fill in all fields to place your order.');
+    return;
+  }
+
+  // 2. Numbers only (belt-and-suspenders — oninput already strips, but just in case)
   if (!/^\d+$/.test(p)) {
     alert('❌ Phone number must contain numbers only — no letters or symbols.');
     document.getElementById('fphone').focus();
     return;
   }
 
-  // Check for exactly 11 digits
+  // 3. Exactly 11 digits
   if (p.length !== 11) {
     alert(`❌ Phone number must be exactly 11 digits. You entered ${p.length}.`);
     document.getElementById('fphone').focus();
     return;
   }
 
-  if (!n || !p || !a || !pkg) {
-    alert('Please fill in all fields to place your order.');
+  // 4. Valid Nigerian network prefix
+  if (!/^(070|080|081|090|091)\d{8}$/.test(p)) {
+    alert('❌ Enter a valid Nigerian number starting with 070, 080, 081, 090, or 091.');
+    document.getElementById('fphone').focus();
     return;
   }
 
-  const form = document.getElementById('orderForm');
+  // 5. No repeated or obviously fake numbers
+  if (/^(\d)\1{10}$/.test(p) || ['08012345678','07012345678','09012345678','08000000000'].includes(p)) {
+    alert('❌ That doesn\'t look like a real phone number. Please check and re-enter.');
+    document.getElementById('fphone').focus();
+    return;
+  }
+
+  // 6. Double-entry confirmation
+  if (p !== p2) {
+    alert('❌ Phone numbers do not match. Please check and re-enter.');
+    document.getElementById('fphone2').focus();
+    return;
+  }
+
+  // ✅ All checks passed — submit
+  const form      = document.getElementById('orderForm');
   const submitBtn = document.getElementById('submitBtn');
-  const msg = document.getElementById('successMsg');
-  const formData = new FormData(form);
+  const msg       = document.getElementById('successMsg');
+  const formData  = new FormData(form);
   const originalText = submitBtn.textContent;
 
   submitBtn.textContent = "Sending...";
@@ -240,7 +271,6 @@ async function submitOrder() {
       form.style.display = 'none';
       msg.style.display = "block";
       msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Fire Meta Pixel purchase event
       if (typeof fbq !== 'undefined') { fbq('track', 'Lead'); }
     } else {
       alert("Error: " + data.message);
