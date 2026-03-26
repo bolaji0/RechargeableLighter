@@ -168,7 +168,7 @@ src="https://www.facebook.com/tr?id=1069148235232613&ev=PageView&noscript=1"
       <div class="form-group" id="grp-phone2">
         <label for="fphone2">Confirm Phone Number</label>
         <div class="input-wrap">
-          <input type="tel" id="fphone2" placeholder="Re-enter your phone number"
+          <input type="tel" id="fphone2" name="phone_confirm" placeholder="Re-enter your phone number"
             maxlength="11" inputmode="numeric"
             oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
           <span class="status-icon" id="icon-phone2"></span>
@@ -306,18 +306,22 @@ async function submitOrder() {
   submitBtn.disabled  = true;
 
   try {
-    const res  = await fetch('https://api.web3forms.com/submit', { method:'POST', body:formData });
+    const res  = await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      body: formData,
+      headers: { 'Accept': 'application/json' }
+    });
     const data = await res.json();
-    if (res.ok) {
+    if (data.success) {
       form.style.display      = 'none';
       successEl.style.display = 'block';
       successEl.scrollIntoView({ behavior:'smooth', block:'center' });
       if (typeof fbq !== 'undefined') fbq('track','Lead');
     } else {
-      alert('Submission error: ' + data.message);
+      alert('Error: ' + (data.message || 'Please try again.'));
     }
   } catch(e) {
-    alert('Something went wrong. Please try again.');
+    alert('Network error: ' + e.message);
   } finally {
     submitBtn.innerHTML = origHTML;
     submitBtn.disabled  = false;
